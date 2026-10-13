@@ -1,4 +1,4 @@
-# FnO Pulse 🌌
+F&O Pulse 🌌
 
 An Indian F&O analysis app under development. The first Android builds use clearly labeled demonstration market data and do **not** place orders.
 
