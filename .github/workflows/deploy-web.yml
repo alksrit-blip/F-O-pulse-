@@ -1,0 +1,56 @@
+name: FnO Pulse mobile web deployment
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: fnopulse-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy-website:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Generate mobile web app
+        run: flutter create --platforms=web --project-name fno_pulse --org com.alok .
+      - name: Set app name in website manifest
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("web/manifest.json")
+          d=json.loads(p.read_text())
+          d.update({"name":"FnO Pulse","short_name":"FnO Pulse","description":"Indian F&O DEMO research dashboard","display":"standalone","start_url":".","scope":"."})
+          p.write_text(json.dumps(d,indent=2))
+          PY
+      - name: Resolve dependencies
+        run: flutter pub get
+      - name: Build mobile-friendly site
+        run: flutter build web --release --base-href /F-O-pulse-/
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Upload website artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
